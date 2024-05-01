@@ -94,7 +94,7 @@ public class RealtorsParser {
             Elements priceHistoryElements = h.select("div.price-col.number");
             Elements dateElements = h.select("div.col-4 p:first-of-type");
 
-            for (int i = 0; i < priceHistoryElements.size(); i++) {
+            for (int i = 0; i < priceHistoryElements.size(); i++) { //needs revision (important)
                 Element priceElement = priceHistoryElements.get(i);
                 String price = priceElement.text().replace("$", "").replace(",", "");
 
@@ -107,16 +107,16 @@ public class RealtorsParser {
             String schoolDistrict = h.select("div.super-group-content div.amenity-group:has(div.title:contains(School Information)) ul li span.entryItemContent:contains(School District Name) span").text();
             String cleaned_school_district = "";
 
-            String publicFacts = h.select(".public-facts").text();
+            String publicFacts = h.select("div.sectionContainer[data-rf-test-id=\"publicRecords\"] .PublicRecordsBasicInfo").text();
             String cleaned_public_facts = "";
 
-            int lotSize = metricToInteger(h.select(".lot-size").text().replace(",", ""));
+            int lotSize = metricToInteger(h.select(".lot-size").text().replace(",", "")); //this may be alr found under public facts remove(?)
             int cleaned_lot_size = 0;
 
-            String style = h.select(".style").text();
+            String style = h.select(".style").text(); //this may be alr found under public facts remove(?)
             String cleaned_style = "";
 
-            String county = h.select(".county").text();
+            String county = h.select(".county").text(); //this may be alr found under public facts remove(?)
             String cleaned_county = "";
 
             // house page: YEAR BUILT
