@@ -9,48 +9,70 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class RealtorsParser {
-    private Document currentDoc;  // Document object to hold the current page being processed
-    private String coreURL;       // Base URL for the site (can be extended for other cities or pages)
-
+    private String coreURL = "https://www.redfin.com/city/15502/PA/Philadelphia";
     private LinkedList<House> redfinHouses = new LinkedList<House>();  // List to store the collected house data
 
-    // Constructor initializes the parser with a specific URL and attempts to fetch the initial page
     public RealtorsParser() {
-        coreURL = "https://www.redfin.com/";
-        try {
-            currentDoc = Jsoup.connect("https://www.redfin.com/city/15502/PA/Philadelphia").get();
-        } catch (IOException e) {
-            System.out.println("Could not access link: " + e.getMessage());
-        }
     }
 
-    public List<String> extractHouseLinks(Document doc) {
-        List<String> links = new ArrayList<>();
-        Elements elements = doc.select(".link-and-anchor.visuallyHidden"); // Example selector
-        for (Element element : elements) {
-            links.add(element.attr("href"));
-        }
-        return links;
-    }
-
-
-    // Collects all houses from multiple pages
+    // Main method to collect all houses
     public LinkedList<House> collectAllHouses() {
-        String curURL = "https://www.redfin.com/city/15502/PA/Philadelphia/page-";
-
-        for (int i = 1; i < 10; i++) {  // Example: navigating through the first 10 pages
+        LinkedList<House> redfinHouses = new LinkedList<>();
+        String baseURL = "https://www.redfin.com/city/15502/PA/Philadelphia";
+        for (int i = 1; i <= 10; i++) { // Navigating through the first 10 pages
+            String pageUrl = baseURL + "/page-" + i;
+            System.out.println("Fetching URL: " + pageUrl); // Print the URL being accessed
             try {
-                Document currentDoc = Jsoup.connect(curURL + i).get();
-                getHousesfromPage(currentDoc);
+                Document pageDoc = Jsoup.connect(pageUrl).get();
+                List<String> houseLinks = extractHouseLinks(pageDoc);
+                System.out.println("Found " + houseLinks.size() + " house links on page " + i); // Debug the number of links found
+                for (String link : houseLinks) {
+                    System.out.println("Processing link: " + link); // Debug output
+                    List<House> houses = getHouseFromPage(link);
+                    redfinHouses.addAll(houses);
+                }
             } catch (IOException e) {
-                System.out.println("Could not access link: " + e.getMessage());
+                System.out.println("Failed to fetch or parse page " + i + ": " + e.getMessage());
             }
         }
         return redfinHouses;
     }
 
-    private void getHousesfromPage(Document curPage) {
-        Elements elements = curPage.select(".bp-Homecard__Content");
+
+    // Extract house links from a single page
+    public List<String> extractHouseLinks(Document doc) {
+        List<String> links = new ArrayList<>();
+        Elements elements = doc.select(".link-and-anchor.visuallyHidden"); // Ensure this selector is correct
+        for (Element element : elements) {
+            String href = element.attr("href");
+            // Convert relative URL to absolute URL
+            if (!href.startsWith("http")) {
+                href = "https://www.redfin.com" + (href.startsWith("/") ? href : "/" + href);
+            }
+            System.out.println("Extracted link: " + href); // Debug output
+            links.add(href);
+        }
+        return links;
+    }
+
+
+    // Fetch and parse a single house page
+    public List<House> getHouseFromPage(String houseUrl) {
+        try {
+            Document houseDoc = Jsoup.connect(houseUrl).get();
+            List<House> houses = parseHouseDetails(houseDoc);
+            System.out.println("Parsed " + houses.size() + " houses from URL: " + houseUrl); // Debug output
+            return houses;
+        } catch (IOException e) {
+            System.out.println("Failed to fetch house details from " + houseUrl + ": " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    // Parse house details from a document
+    private List<House> parseHouseDetails(Document doc) {
+        List<House> houses = new ArrayList<>();
+        Elements elements = doc.select(".bp-Homecard__Content");
 
         for (Element h : elements) {
             String cost = h.select(".bp-Homecard__Price--value").text();
@@ -121,10 +143,11 @@ public class RealtorsParser {
             int bikeScore = metricToInteger(h.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text());
             int cleaned_bike_score = 0;
 
-            redfinHouses.add(new House(cleaned_cost, cleaned_beds, cleaned_baths, cleaned_sqft, address, houseLink, cleaned_school_district,
+            houses.add(new House(cleaned_cost, cleaned_beds, cleaned_baths, cleaned_sqft, address, houseLink, cleaned_school_district,
                     cleaned_public_facts, cleaned_lot_size, cleaned_style, cleaned_county, cleaned_year_built, cleaned_buyer_agent,
                     cleaned_market_comp, cleaned_walk_score, cleaned_transit_score, cleaned_bike_score, priceHistory));
         }
+        return houses;
     }
 
 
