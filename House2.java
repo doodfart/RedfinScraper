@@ -1,3 +1,5 @@
+import java.util.List;
+
 public class House {
     // attributes
     public int cost;
@@ -42,5 +44,6 @@ public class House {
         this.walkScore = walkScore;
         this.transitScore = transitScore;
         this.bikeScore = bikeScore;
+        this.priceHistory = priceHistory;
     }
 }
