@@ -72,80 +72,103 @@ public class RealtorsParser {
     // Parse house details from a document
     private List<House> parseHouseDetails(Document doc) {
         List<House> houses = new ArrayList<>();
-        Elements elements = doc.select(".bp-Homecard__Content");
+        try {
+            // house page: COST
+            String cost = doc.select(".stat-block[data-rf-test-id='abp-price'] .statsValue").text().replace("$", "").replace(",", "");
+            int cleaned_cost = cost.isEmpty() ? -1 : Integer.parseInt(cost);
 
-        for (Element h : elements) {
-            String cost = h.select(".bp-Homecard__Price--value").text();
-            int cleaned_cost = Integer.parseInt(cost.replace("$", "").replace(",", ""));
+            // house page: BEDS
+            String s_beds = doc.select(".stat-block[data-rf-test-id='abp-beds'] .statsValue").text();
+            int cleaned_beds = s_beds.isEmpty() ? -1 : metricToInteger(s_beds);
 
-            String s_beds = h.select("span:contains(bed)").first().text().split(" ")[0];
-            int cleaned_beds = metricToInteger(s_beds);
+            // house page: BATHS
+            String s_baths = doc.select(".stat-block[data-rf-test-id='abp-baths'] .statsValue").text();
+            float cleaned_baths = s_baths.isEmpty() ? -1 : metricToFloat(s_baths);
 
-            String s_baths = h.select("span:contains(bath)").first().text().split(" ")[0];
-            float cleaned_baths = metricToFloat(s_baths);
+            // house page: SQFT
+            String sqft = doc.select(".stat-block[data-rf-test-id='abp-sqFt'] .statsValue").text().replace(",", "");
+            int cleaned_sqft = sqft.isEmpty() ? -1 : metricToInteger(sqft);
 
-            String sqft = h.select("span.bp-Homecard__LockedStat--value").first().text();
-            int cleaned_sqft = metricToInteger(sqft.replace(",", ""));
+            // house page: FULL ADDRESS
+            String streetAddress = doc.select("div[data-rf-test-id='abp-streetLine']").text();
+            String cityStateZip = doc.select("div[data-rf-test-id='abp-cityStateZip']").text();
+            String fullAddress = streetAddress.isEmpty() ? "Unknown address" : streetAddress + ", " + cityStateZip;
 
-            String address = h.select("div.bp-Homecard__Address.flex.align-center.color-text-primary.font-body-xsmall-compact").first().text();
-            String houseLink = h.parent().select("a").attr("href");
+            // String houseLink = doc.parent().select("a").attr("href");
 
             List<PriceData> priceHistory = new ArrayList<>();
-            Elements priceHistoryElements = h.select("div.price-col.number");
-            Elements dateElements = h.select("div.col-4 p:first-of-type");
+            Elements priceHistoryElements = doc.select("div.price-col.number");
+            Elements dateElements = doc.select("div.col-4 p:first-of-type");
 
-            for (int i = 0; i < priceHistoryElements.size(); i++) { //needs revision (important)
-                Element priceElement = priceHistoryElements.get(i);
-                String price = priceElement.text().replace("$", "").replace(",", "");
-
-                String date = (i < dateElements.size()) ? dateElements.get(i).text() : "Unknown date";
-
-                priceHistory.add(new PriceData(price, date));
-            }
+//            for (int i = 0; i < priceHistoryElements.size(); i++) {
+//                Element priceElement = priceHistoryElements.get(i);
+//                String price = priceElement.text().replace("$", "").replace(",", "");
+//
+//                String date = (i < dateElements.size()) ? dateElements.get(i).text() : "Unknown date";
+//
+//                priceHistory.add(new PriceData(price, date));
+//            }
 
             // house page: SCHOOL DISTRICT
-            String schoolDistrict = h.select("div.super-group-content div.amenity-group:has(div.title:contains(School Information)) ul li span.entryItemContent:contains(School District Name) span").text();
+            String schoolDistrict = doc.select("div.super-group-content div.amenity-group:has(div.title:contains(School Information)) ul li span.entryItemContent:contains(School District Name) span").text();
             String cleaned_school_district = "";
 
-            String publicFacts = h.select("div.sectionContainer[data-rf-test-id=\"publicRecords\"] .PublicRecordsBasicInfo").text();
+            // PLACEHOLDER CSS: FIX
+            String publicFacts = doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text();
             String cleaned_public_facts = "";
 
-            int lotSize = metricToInteger(h.select(".lot-size").text().replace(",", "")); //this may be alr found under public facts remove(?)
+            // PLACEHOLDER CSS: FIX
+            int lotSize = metricToInteger(doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text());
             int cleaned_lot_size = 0;
 
-            String style = h.select(".style").text(); //this may be alr found under public facts remove(?)
+            // PLACEHOLDER CSS: FIX
+            String style = doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text();
             String cleaned_style = "";
 
-            String county = h.select(".county").text(); //this may be alr found under public facts remove(?)
+            // PLACEHOLDER CSS: FIX
+            String county = doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text();
             String cleaned_county = "";
 
             // house page: YEAR BUILT
-            int yearBuilt = metricToInteger(h.select("div.table-row:has(span.table-label:contains(Year Built)) .table-value").text());
+            int yearBuilt = metricToInteger(doc.select("div.table-row:has(span.table-label:contains(Year Built)) .table-value").text());
             int cleaned_year_built = 0;
 
-            // REMOVE THIS
-            float buyerAgentFee = metricToFloat(h.select(".buyer-agent-fee").text().replace("%", ""));
-            float cleaned_buyer_agent = 0;
-
             // house page: MARKET COMP SCORE
-            int marketCompetition = metricToInteger(h.select("div#compete-score .scoreTM .score").text());
-            int cleaned_market_comp = 0;
-
+            String marketCompetitionString = doc.select("div#compete-score .scoreTM .score").text();
+            int cleaned_market_comp = marketCompetitionString.isEmpty() ? -1 : metricToInteger(marketCompetitionString);
             // house page: WALK SCORE
-            int walkScore = metricToInteger(h.select("div.transport-icon-and-percentage.walkscore div[data-rf-test-name='ws-percentage'] span.value").text());
-            int cleaned_walk_score = 0;
+            String walkScoreString = doc.select("div.transport-icon-and-percentage.walkscore div[data-rf-test-name='ws-percentage'] span.value").text();
+            int cleaned_walk_score = walkScoreString.isEmpty() ? -1 : metricToInteger(walkScoreString);
 
             // house page: TRANSIT SCORE
-            int transitScore = metricToInteger(h.select("div.transport-icon-and-percentage.transitscore div[data-rf-test-name='ws-percentage'] span.value").text());
-            int cleaned_transit_score = 0;
+            String transitScoreString = doc.select("div.transport-icon-and-percentage.transitscore div[data-rf-test-name='ws-percentage'] span.value").text();
+            int cleaned_transit_score = transitScoreString.isEmpty() ? -1 : metricToInteger(transitScoreString);
 
             // house page: BIKE SCORE
-            int bikeScore = metricToInteger(h.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text());
-            int cleaned_bike_score = 0;
+            String bikeScoreString = doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text();
+            int cleaned_bike_score = bikeScoreString.isEmpty() ? -1 : metricToInteger(bikeScoreString);
 
-            houses.add(new House(cleaned_cost, cleaned_beds, cleaned_baths, cleaned_sqft, address, houseLink, cleaned_school_district,
-                    cleaned_public_facts, cleaned_lot_size, cleaned_style, cleaned_county, cleaned_year_built, cleaned_buyer_agent,
-                    cleaned_market_comp, cleaned_walk_score, cleaned_transit_score, cleaned_bike_score, priceHistory));
+
+            houses.add(new House(
+                    cleaned_cost,               // int cost
+                    cleaned_beds,               // int bed
+                    cleaned_baths,              // float bath
+                    cleaned_sqft,               // int sqft
+                    fullAddress,                // String address
+                    cleaned_school_district,    // String schoolDistrict
+                    cleaned_public_facts,       // String publicFacts
+                    cleaned_lot_size,           // int lotSize
+                    cleaned_style,              // String style
+                    cleaned_county,             // String county
+                    cleaned_year_built,         // int yearBuilt
+                    cleaned_market_comp,        // int marketCompetition
+                    cleaned_walk_score,         // int walkScore
+                    cleaned_transit_score,      // int transitScore
+                    cleaned_bike_score,         // int bikeScore
+                    priceHistory                // List<PriceData> priceHistory
+            ));
+        } catch (Exception e) {
+            System.out.println("Error parsing house details: " + e.getMessage());
         }
         return houses;
     }
