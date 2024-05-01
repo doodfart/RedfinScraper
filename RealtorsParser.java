@@ -60,7 +60,7 @@ public class RealtorsParser {
     public List<House> getHouseFromPage(String houseUrl) {
         try {
             Document houseDoc = Jsoup.connect(houseUrl).get();
-            List<House> houses = parseHouseDetails(houseDoc);
+            List<House> houses = parseHouseDetails(houseDoc, houseUrl);
             System.out.println("Parsed " + houses.size() + " houses from URL: " + houseUrl); // Debug output
             return houses;
         } catch (IOException e) {
@@ -70,7 +70,7 @@ public class RealtorsParser {
     }
 
     // Parse house details from a document
-    private List<House> parseHouseDetails(Document doc) {
+    private List<House> parseHouseDetails(Document doc, String houseURL) {
         List<House> houses = new ArrayList<>();
         try {
             // house page: COST
@@ -136,7 +136,9 @@ public class RealtorsParser {
             // house page: MARKET COMP SCORE
             String marketCompetitionString = doc.select("div#compete-score .scoreTM .score").text();
             int cleaned_market_comp = marketCompetitionString.isEmpty() ? -1 : metricToInteger(marketCompetitionString);
+
             // house page: WALK SCORE
+            System.out.println(doc.select("div.transport-icon-and-percentage.walkscore").outerHtml());
             String walkScoreString = doc.select("div.transport-icon-and-percentage.walkscore div[data-rf-test-name='ws-percentage'] span.value").text();
             int cleaned_walk_score = walkScoreString.isEmpty() ? -1 : metricToInteger(walkScoreString);
 
@@ -155,6 +157,7 @@ public class RealtorsParser {
                     cleaned_baths,              // float bath
                     cleaned_sqft,               // int sqft
                     fullAddress,                // String address
+                    houseURL,                   // String URL
                     cleaned_school_district,    // String schoolDistrict
                     cleaned_public_facts,       // String publicFacts
                     cleaned_lot_size,           // int lotSize
