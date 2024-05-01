@@ -24,6 +24,16 @@ public class RealtorsParser {
         }
     }
 
+    public List<String> extractHouseLinks(Document doc) {
+        List<String> links = new ArrayList<>();
+        Elements elements = doc.select(".link-and-anchor.visuallyHidden"); // Example selector
+        for (Element element : elements) {
+            links.add(element.attr("href"));
+        }
+        return links;
+    }
+
+
     // Collects all houses from multiple pages
     public LinkedList<House> collectAllHouses() {
         String curURL = "https://www.redfin.com/city/15502/PA/Philadelphia/page-";
@@ -70,7 +80,7 @@ public class RealtorsParser {
 
                 priceHistory.add(new PriceData(price, date));
             }
-            
+
             // house page: SCHOOL DISTRICT
             String schoolDistrict = h.select("div.super-group-content div.amenity-group:has(div.title:contains(School Information)) ul li span.entryItemContent:contains(School District Name) span").text();
             String cleaned_school_district = "";
