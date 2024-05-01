@@ -59,10 +59,16 @@ public class RealtorsParser {
             String houseLink = h.parent().select("a").attr("href");
 
             List<PriceData> priceHistory = new ArrayList<>();
-            Elements priceHistoryElements = h.select(".price-history-selector"); // find right css
-            for (Element priceElement : priceHistoryElements) {
+            Elements priceHistoryElements = h.select("div.price-col.number");
+            Elements dateElements = h.select("div.col-4 p:first-of-type");
+
+            for (int i = 0; i < priceHistoryElements.size(); i++) {
+                Element priceElement = priceHistoryElements.get(i);
                 String price = priceElement.text().replace("$", "").replace(",", "");
-                priceHistory.add(new PriceData(price)); // Assuming PriceData constructor only needs the price
+
+                String date = (i < dateElements.size()) ? dateElements.get(i).text() : "Unknown date";
+
+                priceHistory.add(new PriceData(price, date)); 
             }
             String schoolDistrict = h.select(".school-district").text();
             String cleaned_school_district = "";
