@@ -4,7 +4,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class RealtorsParser {
     private Document currentDoc;  // Document object to hold the current page being processed
@@ -56,6 +58,18 @@ public class RealtorsParser {
             String address = h.select("div.bp-Homecard__Address.flex.align-center.color-text-primary.font-body-xsmall-compact").first().text();
             String houseLink = h.parent().select("a").attr("href");
 
+            List<PriceData> priceHistory = new ArrayList<>();
+            Elements priceHistoryElements = h.select("div.price-col.number");
+            Elements dateElements = h.select("div.col-4 p:first-of-type");
+
+            for (int i = 0; i < priceHistoryElements.size(); i++) {
+                Element priceElement = priceHistoryElements.get(i);
+                String price = priceElement.text().replace("$", "").replace(",", "");
+
+                String date = (i < dateElements.size()) ? dateElements.get(i).text() : "Unknown date";
+
+                priceHistory.add(new PriceData(price, date));
+            }
             String schoolDistrict = h.select(".school-district").text();
             String cleaned_school_district = "";
 
@@ -71,27 +85,29 @@ public class RealtorsParser {
             String county = h.select(".county").text();
             String cleaned_county = "";
 
-            int yearBuilt = metricToInteger(h.select(".year-built").text());
+            // house page: YEAR BUILT
+            int yearBuilt = metricToInteger(h.select("div.table-row:has(span.table-label:contains(Year Built)) .table-value").text());
             int cleaned_year_built = 0;
 
-            float buyerAgentFee = metricToFloat(h.select(".buyer-agent-fee").text().replace("%", ""));
-            float cleaned_buyer_agent = 0;
-
-            int marketCompetition = metricToInteger(h.select(".market-competition").text());
+            // house page: MARKET COMP SCORE
+            int marketCompetition = metricToInteger(h.select("div#compete-score .scoreTM .score").text());
             int cleaned_market_comp = 0;
 
-            int walkScore = metricToInteger(h.select(".walk-score").text());
+            // house page: WALK SCORE
+            int walkScore = metricToInteger(h.select("div.transport-icon-and-percentage.walkscore div[data-rf-test-name='ws-percentage'] span.value").text());
             int cleaned_walk_score = 0;
 
-            int transitScore = metricToInteger(h.select(".transit-score").text());
+            // house page: TRANSIT SCORE
+            int transitScore = metricToInteger(h.select("div.transport-icon-and-percentage.transitscore div[data-rf-test-name='ws-percentage'] span.value").text());
             int cleaned_transit_score = 0;
 
-            int bikeScore = metricToInteger(h.select(".bike-score").text());
+            // house page: BIKE SCORE
+            int bikeScore = metricToInteger(h.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text());
             int cleaned_bike_score = 0;
 
             redfinHouses.add(new House(cleaned_cost, cleaned_beds, cleaned_baths, cleaned_sqft, address, houseLink, cleaned_school_district,
                     cleaned_public_facts, cleaned_lot_size, cleaned_style, cleaned_county, cleaned_year_built, cleaned_buyer_agent,
-                    cleaned_market_comp, cleaned_walk_score, cleaned_transit_score, cleaned_bike_score));
+                    cleaned_market_comp, cleaned_walk_score, cleaned_transit_score, cleaned_bike_score, priceHistory));
         }
     }
 
