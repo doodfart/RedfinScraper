@@ -1,29 +1,62 @@
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class RealtorsParser {
     private String coreURL = "https://www.redfin.com/city/15502/PA/Philadelphia";
+    // https://www.redfin.com/city/15502/PA/Philadelphia
     private LinkedList<House> redfinHouses = new LinkedList<House>();  // List to store the collected house data
+    private Map<String, String> cookies = new HashMap<>();
 
     public RealtorsParser() {
+    }
+
+    public Document connectWithJsoup(String url) {
+        Document doc = null;
+        try {
+            Connection.Response response = Jsoup.connect(url)
+                    .header("Accept-Encoding", "gzip, deflate")
+                    .userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36")
+                    .referrer("http://www.google.com")
+                    .cookies(cookies)
+                    .method(Connection.Method.GET)
+                    .execute();
+
+            cookies.putAll(response.cookies()); // Update the saved cookies
+
+            doc = response.parse();
+            // Random delay to mimic human browsing
+            long sleepTime = 5000 + (long) (Math.random() * 10000);
+            System.out.println("Sleeping for " + sleepTime + " milliseconds.");
+            Thread.sleep(sleepTime);
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Error connecting to the URL: " + e.getMessage());
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+        }
+        return doc;
     }
 
     // Main method to collect all houses
     public LinkedList<House> collectAllHouses() {
         LinkedList<House> redfinHouses = new LinkedList<>();
-        String baseURL = "https://www.redfin.com/city/15502/PA/Philadelphia";
-        for (int i = 1; i <= 10; i++) { // Navigating through the first 10 pages
+        String baseURL = coreURL;
+        for (int i = 1; i <= 2; i++) {
+            try {
+                Thread.sleep(10000);  // Delay to prevent being blocked by the server
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Thread interrupted: " + e);
+            }
+
             String pageUrl = baseURL + "/page-" + i;
             System.out.println("Fetching URL: " + pageUrl); // Print the URL being accessed
-            try {
-                Document pageDoc = Jsoup.connect(pageUrl).get();
+            Document pageDoc = connectWithJsoup(pageUrl);
+            if (pageDoc != null) {
                 List<String> houseLinks = extractHouseLinks(pageDoc);
                 System.out.println("Found " + houseLinks.size() + " house links on page " + i); // Debug the number of links found
                 for (String link : houseLinks) {
@@ -31,8 +64,6 @@ public class RealtorsParser {
                     List<House> houses = getHouseFromPage(link);
                     redfinHouses.addAll(houses);
                 }
-            } catch (IOException e) {
-                System.out.println("Failed to fetch or parse page " + i + ": " + e.getMessage());
             }
         }
         return redfinHouses;
@@ -59,7 +90,12 @@ public class RealtorsParser {
     // Fetch and parse a single house page
     public List<House> getHouseFromPage(String houseUrl) {
         try {
-            Document houseDoc = Jsoup.connect(houseUrl).get();
+            Document houseDoc = Jsoup.connect(houseUrl)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
+                    .referrer("http://www.google.com")
+                    .timeout(12000) // Increase timeout to wait longer for a response
+                    .followRedirects(true) // Ensure that any redirects are followed automatically
+                    .get();
             List<House> houses = parseHouseDetails(houseDoc, houseUrl);
             System.out.println("Parsed " + houses.size() + " houses from URL: " + houseUrl); // Debug output
             return houses;
@@ -71,6 +107,7 @@ public class RealtorsParser {
 
     // Parse house details from a document
     private List<House> parseHouseDetails(Document doc, String houseURL) {
+        // System.out.println(doc.outerHtml());
         List<House> houses = new ArrayList<>();
         try {
             // house page: COST
@@ -113,22 +150,6 @@ public class RealtorsParser {
             String schoolDistrict = doc.select("div.super-group-content div.amenity-group:has(div.title:contains(School Information)) ul li span.entryItemContent:contains(School District Name) span").text();
             String cleaned_school_district = "";
 
-            // PLACEHOLDER CSS: FIX
-            String publicFacts = doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text();
-            String cleaned_public_facts = "";
-
-            // PLACEHOLDER CSS: FIX
-            int lotSize = metricToInteger(doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text());
-            int cleaned_lot_size = 0;
-
-            // PLACEHOLDER CSS: FIX
-            String style = doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text();
-            String cleaned_style = "";
-
-            // PLACEHOLDER CSS: FIX
-            String county = doc.select("div.transport-icon-and-percentage.bikescore div[data-rf-test-name='ws-percentage'] span.value").text();
-            String cleaned_county = "";
-
             // house page: YEAR BUILT
             int yearBuilt = metricToInteger(doc.select("div.table-row:has(span.table-label:contains(Year Built)) .table-value").text());
             int cleaned_year_built = 0;
@@ -138,7 +159,7 @@ public class RealtorsParser {
             int cleaned_market_comp = marketCompetitionString.isEmpty() ? -1 : metricToInteger(marketCompetitionString);
 
             // house page: WALK SCORE
-            System.out.println(doc.select("div.transport-icon-and-percentage.walkscore").outerHtml());
+            // System.out.println(doc.select("div.transport-icon-and-percentage.walkscore").outerHtml());
             String walkScoreString = doc.select("div.transport-icon-and-percentage.walkscore div[data-rf-test-name='ws-percentage'] span.value").text();
             int cleaned_walk_score = walkScoreString.isEmpty() ? -1 : metricToInteger(walkScoreString);
 
@@ -159,10 +180,6 @@ public class RealtorsParser {
                     fullAddress,                // String address
                     houseURL,                   // String URL
                     cleaned_school_district,    // String schoolDistrict
-                    cleaned_public_facts,       // String publicFacts
-                    cleaned_lot_size,           // int lotSize
-                    cleaned_style,              // String style
-                    cleaned_county,             // String county
                     cleaned_year_built,         // int yearBuilt
                     cleaned_market_comp,        // int marketCompetition
                     cleaned_walk_score,         // int walkScore
