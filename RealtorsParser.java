@@ -70,7 +70,9 @@ public class RealtorsParser {
 
                 priceHistory.add(new PriceData(price, date));
             }
-            String schoolDistrict = h.select(".school-district").text();
+            
+            // house page: SCHOOL DISTRICT
+            String schoolDistrict = h.select("div.super-group-content div.amenity-group:has(div.title:contains(School Information)) ul li span.entryItemContent:contains(School District Name) span").text();
             String cleaned_school_district = "";
 
             String publicFacts = h.select(".public-facts").text();
@@ -88,6 +90,10 @@ public class RealtorsParser {
             // house page: YEAR BUILT
             int yearBuilt = metricToInteger(h.select("div.table-row:has(span.table-label:contains(Year Built)) .table-value").text());
             int cleaned_year_built = 0;
+
+            // REMOVE THIS
+            float buyerAgentFee = metricToFloat(h.select(".buyer-agent-fee").text().replace("%", ""));
+            float cleaned_buyer_agent = 0;
 
             // house page: MARKET COMP SCORE
             int marketCompetition = metricToInteger(h.select("div#compete-score .scoreTM .score").text());
