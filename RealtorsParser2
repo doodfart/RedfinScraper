@@ -59,7 +59,7 @@ public class RealtorsParser {
             String houseLink = h.parent().select("a").attr("href");
 
             List<PriceData> priceHistory = new ArrayList<>();
-            Elements priceHistoryElements = h.select(".price-history-selector"); // Adjust the selector to match the actual HTML
+            Elements priceHistoryElements = h.select(".price-history-selector"); // find right css
             for (Element priceElement : priceHistoryElements) {
                 String price = priceElement.text().replace("$", "").replace(",", "");
                 priceHistory.add(new PriceData(price)); // Assuming PriceData constructor only needs the price
