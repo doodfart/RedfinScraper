@@ -42,7 +42,11 @@ public class SelectorTest {
     }
 
     public static void main(String[] args) {
-        SelectorTest tester = new SelectorTest("https://www.redfin.com/city/15502/PA/Philadelphia");
-        tester.testSelector("span:contains(School District Name:)"); // Example selector
+        // Replace this URL with the specific house page URL you want to test
+        SelectorTest tester = new SelectorTest("https://www.redfin.com/PA/Philadelphia/270-E-Bringhurst-St-19144/home/38320274");
+        // Test the specific CSS selectors for the walk score or any other property details
+        tester.testSelector("div[data-rf-test-name='ws-percentage'] span.value"); // Example selector for Walk Score
+        // Add more selectors here as needed to test other elements
     }
 }
+
