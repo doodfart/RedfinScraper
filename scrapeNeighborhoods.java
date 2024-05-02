@@ -12,16 +12,16 @@ public class scrapeNeighborhoods {
     private String coreURL = "https://www.homes.com/neighborhood-search/boston-ma/?bb=uqimkn46qHi9q_hqD"; // URL
     private List<String> descriptions = new ArrayList<>();
 
-    public ScrapeNeighborhoods(String url) {
+    public scrapeNeighborhoods(String url) {
         this.coreURL = url;
     }
 
     public Document connectWithJsoup(String url) throws IOException, InterruptedException {
         Connection.Response response = Jsoup.connect(url)
-            .userAgent("Mozilla/5.0")
-            .timeout(10000)
-            .followRedirects(true)
-            .execute();
+                .userAgent("Mozilla/5.0")
+                .timeout(10000)
+                .followRedirects(true)
+                .execute();
 
         Thread.sleep(1000); // Simple delay to avoid rapid requests that might get blocked
         return response.parse();
@@ -41,7 +41,7 @@ public class scrapeNeighborhoods {
     }
 
     public static void main(String[] args) {
-        ScrapeNeighborhoods scraper = new ScrapeNeighborhoods("https://www.example.com/city-examples");
+        scrapeNeighborhoods scraper = new scrapeNeighborhoods("https://www.example.com/city-examples");
         List<String> descriptions = scraper.scrapeDescriptions();
         descriptions.forEach(System.out::println);
     }
