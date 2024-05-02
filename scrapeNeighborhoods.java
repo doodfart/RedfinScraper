@@ -41,7 +41,7 @@ public class scrapeNeighborhoods {
     }
 
     public static void main(String[] args) {
-        scrapeNeighborhoods scraper = new scrapeNeighborhoods("https://www.example.com/city-examples");
+        scrapeNeighborhoods scraper = new scrapeNeighborhoods("https://www.homes.com/neighborhood-search/boston-ma/?bb=uqimkn46qHi9q_hqD");
         List<String> descriptions = scraper.scrapeDescriptions();
         descriptions.forEach(System.out::println);
     }
