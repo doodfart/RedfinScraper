@@ -4,6 +4,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import textanalysis.Corpus;
+
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +46,15 @@ public class scrapeNeighborhoods {
     public static void main(String[] args) {
         scrapeNeighborhoods scraper = new scrapeNeighborhoods("https://www.homes.com/neighborhood-search/boston-ma/?bb=uqimkn46qHi9q_hqD");
         List<String> descriptions = scraper.scrapeDescriptions();
+
+        Corpus corpus = new Corpus();
+        for (String desc : descriptions) {
+            corpus.addDocument(new Document(desc));
+        }
+        VectorSpaceModel vectorSpace = new VectorSpaceModel(corpus);
+
+        // Print out some example data or results
         descriptions.forEach(System.out::println);
+        System.out.println("TF-IDF and vector space model computed for neighborhood descriptions.");
     }
 }
